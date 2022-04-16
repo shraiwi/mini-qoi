@@ -1,4 +1,5 @@
-# QOIμ
-A very small QOI codec
+<img align="left" src="mini_qoi_logo.png" width="288px">
 
-## Features
+A streaming QOI codec, designed for embedded systems with very little RAM.
+
+---
