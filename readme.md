@@ -12,13 +12,14 @@
 + It only needs about 300 bytes of RAM while decoding an image!
 + It supports decoding an incoming QOI stream byte-by-byte!
 
-**If you're making an embedded app that makes use of the `.qoi` format and need a simple encoder, this is probably for you!**
+**If you're making an embedded app that makes use of the `.qoi` format and need a simple decoder, this is probably for you!**
 
 ## Why not choose mQOI?
 
 - It's probably slightly slower than the reference codec.
+- It doesn't support encoding (yet)
 
-**If you're making an application that needs the most performance possible, this probably isn't for you.**
+**If you're making an application that needs the highest performance possible, this probably isn't for you.**
 
 ## Example build instructions
 
@@ -66,6 +67,7 @@ while (!mqoi_dec_done(&dec)) {
 
     while ((px = mqoi_dec_pop(&dec)) != NULL) { // as long as the decoder has pixels to read
         // do whatever you want with the pixel here
+        // remember that it's a pointer to a pixel!
     }
 }
 
