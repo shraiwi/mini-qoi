@@ -1,6 +1,6 @@
 <img align="left" src="mini_qoi_logo.png" width="144px">
 
-**Mini QOI (abbreviated mQOI) is a streaming QOI decoder, designed for embedded systems with very little RAM.**
+**Mini QOI (abbreviated mQOI) is a streaming [QOI](https://qoiformat.org/) decoder, designed for embedded systems with very little RAM.**
 
 <br><br>
 
