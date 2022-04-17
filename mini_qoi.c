@@ -1,7 +1,10 @@
 #include "mini_qoi.h"
 
-// utils
+// ==== utilities ====
 
+/*
+Writes a big-endian unsigned 32-bit integer from n to dest.
+*/
 void mqoi_u32_write(const uint32_t * n, char * dest) {
     *(dest++) = (0xff000000 & (*n)) >> 24;
 	*(dest++) = (0x00ff0000 & (*n)) >> 16;
@@ -9,66 +12,120 @@ void mqoi_u32_write(const uint32_t * n, char * dest) {
 	*(dest++) = (0x000000ff & (*n));
 }
 
+/*
+Reads a big-endian unsigned 32-bit integer from src into n.
+*/
 void mqoi_u32_read(const char * src, uint32_t * n) {
-    *n = ((*(src++)) << 24) | 
-        ((*(src++)) << 16) | 
-        ((*(src++)) << 8) | 
-        ((*(src++)) << 0);
+    *n |= ((uint32_t)src[0] & 0xff) << 24;
+    *n |= ((uint32_t)src[1] & 0xff) << 16;
+    *n |= ((uint32_t)src[2] & 0xff) << 8;
+    *n |= ((uint32_t)src[3] & 0xff);
 }
 
-// desc
+// ==== mqoi_desc_t ====
 
+/*
+Initializes an mQOI image descriptor object.
+*/
 void mqoi_desc_init(mqoi_desc_t * desc) {
     memset(desc, 0, sizeof(mqoi_desc_t));
 }
 
-// pushes a byte to the qoi image descriptor. returns true when complete
-bool mqoi_desc_push(mqoi_desc_t * desc, char byte) {
-    *(char *)(desc + (++desc->head)) = byte;
-    return desc->head >= sizeof(mqoi_desc_t) - 1;
+/* 
+Pushes a byte to the mQOI image descriptor object.
+*/
+void mqoi_desc_push(mqoi_desc_t * desc, char byte) {
+    ((char *)desc)[++desc->head] = byte;
 }
 
-// reads a byte from the qoi image descriptor. returns null when complete.
+/*
+Reads a byte from the mQOI image descriptor object.
+Returns NULL when there are none left to read.
+*/
 char * mqoi_desc_pop(mqoi_desc_t * desc) {
     if (desc->head >= sizeof(mqoi_desc_t) - 1) return NULL;
     return (char *)(desc + (++desc->head));
 }
 
-// enc
 /*
-void mqoi_enc_init(mqoi_enc_t * enc) {
-    memset(enc, 0, sizeof(mqoi_enc_t));
+Checks if a mQOI image descriptor is valid, and reads out its width and height into w and h.
+If it returns a nonzero code, it is invalid (use mqoi_desc_err_t to understand what it means)
+*/
+uint8_t mqoi_desc_verify(mqoi_desc_t * desc, uint32_t * w, uint32_t * h) {
+    if (desc->magic[0] != 'q' || desc->magic[1] != 'o' 
+        || desc->magic[2] != 'i' || desc->magic[3] != 'f') {
+        return MQOI_DESC_INVALID_MAGIC;
+    }
 
-    enc->prev_px.a = 0xff;
+    mqoi_u32_read(desc->width, w);
+    mqoi_u32_read(desc->height, h);
+
+    if ((*w) * (*h) > 400000000ul) {
+        return MQOI_DESC_INVALID_SIZE;
+    }
+
+    if (desc->channels != MQOI_CHANNELS_RGB && desc->channels != MQOI_CHANNELS_RGBA) {
+        return MQOI_DESC_INVALID_CHANNELS;
+    }
+
+    if (desc->colorspace != MQOI_COLORSPACE_SRGB && desc->colorspace != MQOI_COLORSPACE_LINEAR) {
+        return MQOI_DESC_INVALID_COLORSPACE;
+    }
+
+    return MQOI_DESC_OK;
 }
 
-void mqoi_enc_push(mqoi_enc_t * enc, mqoi_rgba_t * pix) {
-    
+/*
+Returns true when the mQOI image descriptor object is completely populated.
+*/
+inline bool mqoi_desc_done(const mqoi_desc_t * desc) {
+    return desc->head >= sizeof(mqoi_desc_t) - 1;
 }
 
-mqoi_chunk_t * mqoi_enc_pop(mqoi_enc_t * enc, uint8_t * size) {
+// ==== mqoi_dec_t ====
 
-}*/
-
-// dec
-
-void mqoi_dec_init(mqoi_dec_t * dec) {
+/*
+Initializes an mQOI decoder object. 
+If number of pixels in the image are given (via n_pix), the mqoi_dec_done function will work.
+*/
+void mqoi_dec_init(mqoi_dec_t * dec, uint32_t n_pix) {
     memset(dec, 0, sizeof(mqoi_dec_t));
 
     dec->prev_px.a = 0xff;
+    dec->pix_left = n_pix;
 }
-void mqoi_dec_push(mqoi_dec_t * dec, char byte) {
-    dec->curr_chunk.value[dec->curr_chunk_pos++] = byte;
-    if (dec->stream_end_prog <= 6 && byte == 0 
-        || dec->stream_end_prog == 7 && byte == 1)
-        dec->stream_end_prog++;
+
+/*
+Pushes a byte to the mQOI encoder.
+Don't call this more than once unless all the pixels have been popped via mqoi_dec_pop!
+*/
+inline void mqoi_dec_push(mqoi_dec_t * dec, char byte) {
+    dec->curr_chunk.value[dec->curr_chunk_head++] = byte;
 }
+
+/*
+Pops a pixel from the mQOI decoder.
+Returns NULL if more data is needed, otherwise it returns the address of the next pixel.
+*/
 mqoi_rgba_t * mqoi_dec_pop(mqoi_dec_t * dec) {
-    if (dec->stream_end_prog == 8) return NULL; // if we're at the stream end, break.
-    if (dec->curr_chunk_pos >= dec->curr_chunk_size) { // if we're at the end of the current chunk
-        mqoi_rgba_t px = { 0 };
+
+    if (dec->curr_chunk_size == 0 && dec->curr_chunk_head == 1) { // if we have the head of a new chunk, get its size
+        
+        switch (dec->curr_chunk.head) { // test 8-bit tags
+            case MQOI_OP8_RUN_RGBA: dec->curr_chunk_size = 5; break;
+            case MQOI_OP8_RUN_RGB: dec->curr_chunk_size = 4; break;
+            default: { // test 2-bit tags
+                // chunk size is 1 unless it's an OP_LUMA chunk
+                dec->curr_chunk_size = 1 + ((dec->curr_chunk.head & MQOI_MASK_OP_2B) == MQOI_OP2_LUMA);
+                break;
+            }
+        }
+    }
+    
+    if (dec->curr_chunk_size && dec->curr_chunk_head >= dec->curr_chunk_size) { // if we're at the end of the current chunk
+        mqoi_rgba_t px = { .a = dec->prev_px.a };
         mqoi_rgba_t * px_ptr = NULL;
-        bool is_op_run = false;
+        bool chunk_done = true;
         switch (dec->curr_chunk.head) { // test 8-bit tags
             case MQOI_OP8_RUN_RGBA: // rgba handled
                 px.a = dec->curr_chunk.rgba.a;
@@ -80,8 +137,7 @@ mqoi_rgba_t * mqoi_dec_pop(mqoi_dec_t * dec) {
             default: { // test 2-bit tags
                 switch (dec->curr_chunk.head & MQOI_MASK_OP_2B) {
                     case MQOI_OP2_INDEX:
-                        px_ptr = &dec->hashtable[
-                            dec->curr_chunk.head];
+                        px_ptr = &dec->hashtable[dec->curr_chunk.head]; // no need to mask bits because the top bits are zero
                         break;
                     case MQOI_OP2_DIFF:
                         // shift out each channel and compute difference
@@ -105,7 +161,8 @@ mqoi_rgba_t * mqoi_dec_pop(mqoi_dec_t * dec) {
                     case MQOI_OP2_RUN: {
                         uint8_t run = dec->curr_chunk.head & MQOI_MASK_OP_RUN;
                         px_ptr = &dec->prev_px;
-                        if (is_op_run = run) { // if there is still a run op
+                        if (run) { // if there are still pixels left to emit,
+                            chunk_done = false; // don't reset the chunk (bring us back to the block)
                             dec->curr_chunk.head--;
                         }
                         break;
@@ -126,12 +183,27 @@ mqoi_rgba_t * mqoi_dec_pop(mqoi_dec_t * dec) {
             px_ptr->a = px.a;
         }
         
-        if (!is_op_run) { // if the op isn't run length (i.e. it will no longer emit pixels)
-            dec->curr_chunk_pos = 0;
+        if (chunk_done) { // if the chunk is done, reset the head
+            dec->curr_chunk_head = 0;
             dec->curr_chunk_size = 0;
         }
+
+        dec->prev_px.r = px_ptr->r;
+        dec->prev_px.g = px_ptr->g;
+        dec->prev_px.b = px_ptr->b;
+        dec->prev_px.a = px_ptr->a;
+
+        dec->pix_left--;
 
         return px_ptr;
     }
     return NULL;
+}
+
+/* 
+Returns true if the decoder has emitted all pixels necessary to complete the image being decoded.
+Note that this function will only work if n_pix was given during the initialization of the decoder.
+*/
+inline bool mqoi_dec_done(const mqoi_dec_t * dec) {
+    return dec->pix_left == 0;
 }
