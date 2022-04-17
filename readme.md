@@ -33,7 +33,7 @@ cmake ..
 cmake --build .
 ```
 
-Now the `examples/build directory` should contain `mqoi_decoder`, a simple app that decodes a `.qoi` image and stores it as a file in the RGBA8 format.
+Now the `examples/build` directory should contain `mqoi_decoder`, a simple app that decodes a `.qoi` image and stores it as a file in the RGBA8 format.
 
 ## Minimal code example
 
