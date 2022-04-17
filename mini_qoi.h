@@ -10,6 +10,8 @@
 #define MQOI_RGB_HASH(px) ((px.r * 3 + px.g * 5 + px.b * 7) & 0b00111111)
 #define MQOI_RGBA_HASH(px) ((px.r * 3 + px.g * 5 + px.b * 7 + px.a * 11) & 0b00111111)
 
+#define MQOI_HEADER_SIZE (14)
+
 #define MQOI_MASK_OP_2B (0b11000000)
 #define MQOI_MASK_OP_8B (0b11111111)
 
@@ -120,6 +122,7 @@ mqoi_chunk_t * mqoi_enc_pop(mqoi_enc_t * enc, uint8_t * size);
 
 void mqoi_dec_init(mqoi_dec_t * dec, uint32_t n_pix);
 void mqoi_dec_push(mqoi_dec_t * dec, char byte);
+uint8_t mqoi_dec_take(mqoi_dec_t * dec, const char * bytes);
 mqoi_rgba_t * mqoi_dec_pop(mqoi_dec_t * dec);
 bool mqoi_dec_done(const mqoi_dec_t * dec); 
 

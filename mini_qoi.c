@@ -96,18 +96,12 @@ void mqoi_dec_init(mqoi_dec_t * dec, uint32_t n_pix) {
 }
 
 /*
-Pushes a byte to the mQOI encoder.
+Pushes a byte to the mQOI decoder.
 Don't call this more than once unless all the pixels have been popped via mqoi_dec_pop!
+Also, please don't intermingle this function with calls to mqoi_dec_take!
 */
-inline void mqoi_dec_push(mqoi_dec_t * dec, char byte) {
+void mqoi_dec_push(mqoi_dec_t * dec, char byte) {
     dec->curr_chunk.value[dec->curr_chunk_head++] = byte;
-}
-
-/*
-Pops a pixel from the mQOI decoder.
-Returns NULL if more data is needed, otherwise it returns the address of the next pixel.
-*/
-mqoi_rgba_t * mqoi_dec_pop(mqoi_dec_t * dec) {
 
     if (dec->curr_chunk_size == 0 && dec->curr_chunk_head == 1) { // if we have the head of a new chunk, get its size
         
@@ -121,6 +115,40 @@ mqoi_rgba_t * mqoi_dec_pop(mqoi_dec_t * dec) {
             }
         }
     }
+}
+
+/*
+Automatically read up to 5 bytes so that a subsequent call of mqoi_dec_pop will not return NULL.
+Returns the number of bytes that have been "taken" from the bytes array.
+Please don't intermingle this function with calls to mqoi_dec_push!
+*/
+uint8_t mqoi_dec_take(mqoi_dec_t * dec, const char * bytes) {
+
+    dec->curr_chunk.value[dec->curr_chunk_head++] = *(bytes++);
+
+    switch (dec->curr_chunk.head) { // test 8-bit tags
+        case MQOI_OP8_RUN_RGBA: dec->curr_chunk_size = 5; break;
+        case MQOI_OP8_RUN_RGB: dec->curr_chunk_size = 4; break;
+        default: { // test 2-bit tags
+            // chunk size is 1 unless it's an OP_LUMA chunk
+            dec->curr_chunk_size = 1 + ((dec->curr_chunk.head & MQOI_MASK_OP_2B) == MQOI_OP2_LUMA);
+            break;
+        }
+    }
+
+    while (dec->curr_chunk_head < dec->curr_chunk_size) {
+        dec->curr_chunk.value[dec->curr_chunk_head++] = *(bytes++);
+    }
+
+    return dec->curr_chunk_head;
+}
+
+
+/*
+Pops a pixel from the mQOI decoder.
+Returns NULL if more data is needed, otherwise it returns the address of the next pixel.
+*/
+mqoi_rgba_t * mqoi_dec_pop(mqoi_dec_t * dec) {
     
     if (dec->curr_chunk_size && dec->curr_chunk_head >= dec->curr_chunk_size) { // if we're at the end of the current chunk
         mqoi_rgba_t px = { .a = dec->prev_px.a };
@@ -197,6 +225,7 @@ mqoi_rgba_t * mqoi_dec_pop(mqoi_dec_t * dec) {
 
         return px_ptr;
     }
+
     return NULL;
 }
 

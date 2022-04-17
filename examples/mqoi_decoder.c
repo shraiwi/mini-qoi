@@ -2,8 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/stat.h>
 
 #include "mini_qoi.h"
+
+// uncomment to stream the file
+// #define STREAM_FILE
 
 uint64_t micros(){
     struct timespec ts;
@@ -58,12 +62,14 @@ int main(int argc, const char * argv[]) {
     FILE * opt_f = fopen(argv[2], "wb");
     uint64_t start_us, end_us;
 
+    mqoi_dec_init(&dec, img_w * img_h);
+
     if (!opt_f) {
         printf("couldn't open destination image!\n");
         return -1;
     }
 
-    mqoi_dec_init(&dec, img_w * img_h);
+    #ifdef STREAM_FILE
 
     start_us = micros();
     while (!mqoi_dec_done(&dec) && (read_c = fgetc(img_f)) != -1) {
@@ -75,6 +81,54 @@ int main(int argc, const char * argv[]) {
     }
     end_us = micros();
 
+    #else
+
+    struct stat fstats;
+    stat(argv[1], &fstats);
+
+    size_t opt_head = 0, img_head = 0,
+        img_size = fstats.st_size,
+        opt_size = img_w * img_h * sizeof(mqoi_rgba_t);
+
+    char * img_data = malloc(img_size);
+    mqoi_rgba_t * opt_data = malloc(opt_size);
+
+    memcpy(&img_data[img_head], &img_desc.magic, MQOI_HEADER_SIZE);
+
+    img_head += MQOI_HEADER_SIZE;
+
+    if (img_data == NULL) {
+        printf("couldn't allocate input buffer!\n");
+        return -1;
+    }
+
+    if (opt_data == NULL) {
+        printf("couldn't allocate output buffer!\n");
+        return -1;
+    }
+
+    if (fread(&img_data[img_head], 1, img_size - img_head, img_f) < img_size - img_head) {
+        printf("couldn't read all compressed image data!\n");
+        return -1;
+    }
+
+    start_us = micros();
+    while (!mqoi_dec_done(&dec)) {
+        img_head += mqoi_dec_take(&dec, &img_data[img_head]);
+
+        while ((px = mqoi_dec_pop(&dec)) != NULL) {
+            *(uint32_t *)&opt_data[opt_head++].value = *(uint32_t *)&px->value;
+        }
+    }
+    end_us = micros();
+
+    if (fwrite(opt_data, 1, opt_size, opt_f) < opt_size) {
+        printf("couldn't write all decompressed image data!\n");
+        return -1;
+    }
+    
+    #endif
+
     if (!mqoi_dec_done(&dec)) {
         printf("file ended before image decoding was complete!\n");
         return -1;
@@ -83,9 +137,8 @@ int main(int argc, const char * argv[]) {
     fclose(opt_f);
     fclose(img_f);
 
-    printf("image decoding complete!\n");
     printf("image decoding took %lu us\n", end_us - start_us);
-
+    printf("image decoding complete!\n");
 
     return 0;    
 }
