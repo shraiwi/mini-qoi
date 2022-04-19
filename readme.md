@@ -8,6 +8,7 @@
 
 ## Why choose mQOI?
 
++ It bypasses the 400MP limit of the reference decoder!
 + It requires no dynamic memory allocation!
 + It only needs about 300 bytes of RAM while decoding an image!
 + It supports decoding an incoming QOI stream byte-by-byte!
