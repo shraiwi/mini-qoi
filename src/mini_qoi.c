@@ -66,10 +66,6 @@ uint8_t mqoi_desc_verify(mqoi_desc_t * desc, uint32_t * w, uint32_t * h) {
     mqoi_u32_read(desc->width, w);
     mqoi_u32_read(desc->height, h);
 
-    if ((*w) * (*h) > 400000000ul) {
-        return MQOI_DESC_INVALID_SIZE;
-    }
-
     if (desc->channels != MQOI_CHANNELS_RGB && desc->channels != MQOI_CHANNELS_RGBA) {
         return MQOI_DESC_INVALID_CHANNELS;
     }

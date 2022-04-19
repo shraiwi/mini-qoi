@@ -29,7 +29,6 @@ typedef enum {
     MQOI_DESC_INVALID_MAGIC, // The magic value isn't correct
     MQOI_DESC_INVALID_CHANNELS, // The channel number isn't valid
     MQOI_DESC_INVALID_COLORSPACE, // The colorspace isn't valid
-    MQOI_DESC_INVALID_SIZE // The image exceeds the 400 million pixel soft limit
 } mqoi_desc_err_t;
 
 typedef enum {
