@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "qoi_pgm.h"
 
-// the c++ implementation seems to be a 2x faster on the uno, for some reason
+// the c++ implementation seems to be about 2x faster on the UNO, for some reason
 #define USE_CPP 
 
 #ifdef USE_CPP

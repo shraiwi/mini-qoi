@@ -25,7 +25,7 @@
 
 Here's some performance data from testing on the QOI logo, a 448x220 pixel image.
 
-| Platform | Time (us) | Time per Pixel us/pixel |
+| Platform | Time (us) | Time per Pixel (us/pixel) |
 |-|-|-|
 | Arduino UNO (ATMega328p) | 485764 | 4.93 |
 | Linux Desktop (i7-4790) | 1520 |  0.0154 |
