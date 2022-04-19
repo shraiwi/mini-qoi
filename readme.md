@@ -21,12 +21,23 @@
 
 **If you're making an application that needs the highest performance possible, this probably isn't for you.**
 
+## Performance testing
+
+Here's some performance data from testing on the QOI logo, a 448x220 pixel image.
+
+| Platform | Time (us) | Time per Pixel us/pixel |
+|-|-|-|
+| Arduino UNO (ATMega328p) | 485764 | 4.93 |
+| Linux Desktop (i7-4790) | 1520 |  0.0154 |
+
+For simple images like the QOI logo, the compression ratio is about 1:20! Without compression, the logo would be 394 kB.
+
 ## Example build instructions
 
-To build the example app, use CMake:
+To build the example decoding app, use CMake:
 
 ```sh
-cd examples
+cd examples/cmdline_decoder
 mkdir build
 cd build
 cmake ..

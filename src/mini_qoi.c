@@ -1,25 +1,31 @@
 #include "mini_qoi.h"
 
+#define MQOI_ISHOSTLE (*(uint8_t *)&(__mqoi_le) == 1)
+
+static const uint16_t __mqoi_le = 1;
+
 // ==== utilities ====
 
 /*
 Writes a big-endian unsigned 32-bit integer from n to dest.
 */
-void mqoi_u32_write(const uint32_t * n, char * dest) {
-    *(dest++) = (0xff000000 & (*n)) >> 24;
-	*(dest++) = (0x00ff0000 & (*n)) >> 16;
-	*(dest++) = (0x0000ff00 & (*n)) >> 8;
-	*(dest++) = (0x000000ff & (*n));
+void mqoi_u32_write(const uint32_t * n, uint8_t * dest) {
+    if (MQOI_ISHOSTLE) {
+        *(uint32_t *)dest = __builtin_bswap32(*n); // swap bytes if little endian
+    } else {
+        *(uint32_t *)dest = *n;
+    }
 }
 
 /*
 Reads a big-endian unsigned 32-bit integer from src into n.
 */
-void mqoi_u32_read(const char * src, uint32_t * n) {
-    *n |= ((uint32_t)src[0] & 0xff) << 24;
-    *n |= ((uint32_t)src[1] & 0xff) << 16;
-    *n |= ((uint32_t)src[2] & 0xff) << 8;
-    *n |= ((uint32_t)src[3] & 0xff);
+void mqoi_u32_read(const uint8_t * src, uint32_t * n) {
+    if (MQOI_ISHOSTLE) {
+        *n = __builtin_bswap32(*(uint32_t *)src); // swap bytes if little endian
+    } else {
+        *n = *(uint32_t *)src;
+    }
 }
 
 // ==== mqoi_desc_t ====
@@ -34,17 +40,17 @@ void mqoi_desc_init(mqoi_desc_t * desc) {
 /* 
 Pushes a byte to the mQOI image descriptor object.
 */
-void mqoi_desc_push(mqoi_desc_t * desc, char byte) {
-    ((char *)desc)[++desc->head] = byte;
+void mqoi_desc_push(mqoi_desc_t * desc, uint8_t byte) {
+    ((uint8_t *)desc)[++desc->head] = byte;
 }
 
 /*
 Reads a byte from the mQOI image descriptor object.
 Returns NULL when there are none left to read.
 */
-char * mqoi_desc_pop(mqoi_desc_t * desc) {
+uint8_t * mqoi_desc_pop(mqoi_desc_t * desc) {
     if (desc->head >= sizeof(mqoi_desc_t) - 1) return NULL;
-    return (char *)(desc + (++desc->head));
+    return (uint8_t *)(desc + (++desc->head));
 }
 
 /*
@@ -100,7 +106,7 @@ Pushes a byte to the mQOI decoder.
 Don't call this more than once unless all the pixels have been popped via mqoi_dec_pop!
 Also, please don't intermingle this function with calls to mqoi_dec_take!
 */
-void mqoi_dec_push(mqoi_dec_t * dec, char byte) {
+void mqoi_dec_push(mqoi_dec_t * dec, uint8_t byte) {
     dec->curr_chunk.value[dec->curr_chunk_head++] = byte;
 
     if (dec->curr_chunk_size == 0 && dec->curr_chunk_head == 1) { // if we have the head of a new chunk, get its size
@@ -122,7 +128,7 @@ Automatically read up to 5 bytes so that a subsequent call of mqoi_dec_pop will 
 Returns the number of bytes that have been "taken" from the bytes array.
 Please don't intermingle this function with calls to mqoi_dec_push!
 */
-uint8_t mqoi_dec_take(mqoi_dec_t * dec, const char * bytes) {
+uint8_t mqoi_dec_take(mqoi_dec_t * dec, const uint8_t * bytes) {
 
     dec->curr_chunk.value[dec->curr_chunk_head++] = *(bytes++);
 

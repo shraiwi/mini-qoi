@@ -3,6 +3,10 @@
 #ifndef MINI_QOI_H
 #define MINI_QOI_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
@@ -101,14 +105,14 @@ typedef struct {
 
 // ==== utilities ====
 
-void mqoi_u32_write(const uint32_t * n, char * dest);
-void mqoi_u32_read(const char * src, uint32_t * n);
+void mqoi_u32_write(const uint32_t * n, uint8_t * dest);
+void mqoi_u32_read(const uint8_t * src, uint32_t * n);
 
 // ==== mqoi_desc_t ====
 
 void mqoi_desc_init(mqoi_desc_t * desc);
-void mqoi_desc_push(mqoi_desc_t * desc, char byte);
-char * mqoi_desc_pop(mqoi_desc_t * desc);
+void mqoi_desc_push(mqoi_desc_t * desc, uint8_t byte);
+uint8_t * mqoi_desc_pop(mqoi_desc_t * desc);
 uint8_t mqoi_desc_verify(mqoi_desc_t * desc, uint32_t * w, uint32_t * h);
 bool mqoi_desc_done(const mqoi_desc_t * desc);
 
@@ -121,9 +125,13 @@ mqoi_chunk_t * mqoi_enc_pop(mqoi_enc_t * enc, uint8_t * size);
 // ==== mqoi_dec_t ====
 
 void mqoi_dec_init(mqoi_dec_t * dec, uint32_t n_pix);
-void mqoi_dec_push(mqoi_dec_t * dec, char byte);
-uint8_t mqoi_dec_take(mqoi_dec_t * dec, const char * bytes);
+void mqoi_dec_push(mqoi_dec_t * dec, uint8_t byte);
+uint8_t mqoi_dec_take(mqoi_dec_t * dec, const uint8_t * bytes);
 mqoi_rgba_t * mqoi_dec_pop(mqoi_dec_t * dec);
 bool mqoi_dec_done(const mqoi_dec_t * dec); 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
