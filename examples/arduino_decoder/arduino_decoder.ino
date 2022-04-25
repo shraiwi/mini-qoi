@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "qoi_pgm.h"
+#include "qoi_logo_pgm.h"
 
 // the c++ implementation seems to be about 2x faster on the UNO, for some reason
 #define USE_CPP 
