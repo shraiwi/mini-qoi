@@ -49,9 +49,6 @@ int main(int argc, const char * argv[]) {
         case MQOI_DESC_INVALID_MAGIC: printf("image had an invalid magic value!\n"); return -1;
         case MQOI_DESC_INVALID_CHANNELS: printf("image had an invalid channel number!\n"); return -1;
         case MQOI_DESC_INVALID_COLORSPACE: printf("image had an invalid colorspace!\n"); return -1;
-        case MQOI_DESC_INVALID_SIZE: 
-            printf("image of size %ux%u has more than 400 million pixels!\n", img_w, img_h); 
-            return -1;
         default: break;
     }
 
