@@ -2,6 +2,13 @@
 
 #define MQOI_ISHOSTLE (*(uint8_t *)&(__mqoi_le) == 1)
 
+#ifdef _MSC_VER
+#include <stdlib.h>
+#define MQOI_BSWAP32 _byteswap_ulong
+#else
+#define MQOI_BSWAP32 __builtin_bswap32
+#endif
+
 static const uint16_t __mqoi_le = 1;
 
 // ==== utilities ====
@@ -11,7 +18,7 @@ Writes a big-endian unsigned 32-bit integer from n to dest.
 */
 void mqoi_u32_write(const uint32_t * n, uint8_t * dest) {
     if (MQOI_ISHOSTLE) {
-        *(uint32_t *)dest = __builtin_bswap32(*n); // swap bytes if little endian
+        *(uint32_t *)dest = MQOI_BSWAP32(*n); // swap bytes if little endian
     } else {
         *(uint32_t *)dest = *n;
     }
@@ -22,7 +29,7 @@ Reads a big-endian unsigned 32-bit integer from src into n.
 */
 void mqoi_u32_read(const uint8_t * src, uint32_t * n) {
     if (MQOI_ISHOSTLE) {
-        *n = __builtin_bswap32(*(uint32_t *)src); // swap bytes if little endian
+        *n = MQOI_BSWAP32(*(uint32_t *)src); // swap bytes if little endian
     } else {
         *n = *(uint32_t *)src;
     }
