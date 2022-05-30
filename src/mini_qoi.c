@@ -5,8 +5,10 @@
 #ifdef _MSC_VER
 #include <stdlib.h>
 #define MQOI_BSWAP32 _byteswap_ulong
+#define MQOI_INLINE
 #else
 #define MQOI_BSWAP32 __builtin_bswap32
+#define MQOI_INLINE inline
 #endif
 
 static const uint16_t __mqoi_le = 1;
@@ -87,7 +89,7 @@ uint8_t mqoi_desc_verify(mqoi_desc_t * desc, uint32_t * w, uint32_t * h) {
 /*
 Returns true when the mQOI image descriptor object is completely populated.
 */
-inline bool mqoi_desc_done(const mqoi_desc_t * desc) {
+MQOI_INLINE bool mqoi_desc_done(const mqoi_desc_t * desc) {
     return desc->head >= sizeof(mqoi_desc_t) - 1;
 }
 
@@ -242,6 +244,6 @@ mqoi_rgba_t * mqoi_dec_pop(mqoi_dec_t * dec) {
 Returns true if the decoder has emitted all pixels necessary to complete the image being decoded.
 Note that this function will only work if n_pix was given during the initialization of the decoder.
 */
-inline bool mqoi_dec_done(const mqoi_dec_t * dec) {
+MQOI_INLINE bool mqoi_dec_done(const mqoi_dec_t * dec) {
     return dec->pix_left == 0;
 }
