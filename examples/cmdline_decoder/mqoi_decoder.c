@@ -88,21 +88,20 @@ int main(int argc, const char * argv[]) {
         opt_size = img_w * img_h * sizeof(mqoi_rgba_t);
 
     char * img_data = malloc(img_size);
+    if (img_data == NULL) {
+      printf("couldn't allocate input buffer!\n");
+      return -1;
+    }
+
     mqoi_rgba_t * opt_data = malloc(opt_size);
+    if (opt_data == NULL) {
+      printf("couldn't allocate output buffer!\n");
+      return -1;
+    }
 
     memcpy(&img_data[img_head], &img_desc.magic, MQOI_HEADER_SIZE);
 
     img_head += MQOI_HEADER_SIZE;
-
-    if (img_data == NULL) {
-        printf("couldn't allocate input buffer!\n");
-        return -1;
-    }
-
-    if (opt_data == NULL) {
-        printf("couldn't allocate output buffer!\n");
-        return -1;
-    }
 
     if (fread(&img_data[img_head], 1, img_size - img_head, img_f) < img_size - img_head) {
         printf("couldn't read all compressed image data!\n");
