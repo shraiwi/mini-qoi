@@ -11,7 +11,7 @@
 
 uint64_t micros(){
     struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+    clock_gettime(CLOCK_MONOTONIC, &ts);
     uint64_t us = (uint64_t)ts.tv_sec * 1000000ull + (uint64_t)ts.tv_nsec / 1000ull;
     return us;
 }
@@ -89,14 +89,14 @@ int main(int argc, const char * argv[]) {
 
     char * img_data = malloc(img_size);
     if (img_data == NULL) {
-      printf("couldn't allocate input buffer!\n");
-      return -1;
+        printf("couldn't allocate input buffer!\n");
+        return -1;
     }
 
     mqoi_rgba_t * opt_data = malloc(opt_size);
     if (opt_data == NULL) {
-      printf("couldn't allocate output buffer!\n");
-      return -1;
+        printf("couldn't allocate output buffer!\n");
+        return -1;
     }
 
     memcpy(&img_data[img_head], &img_desc.magic, MQOI_HEADER_SIZE);
