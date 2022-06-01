@@ -2,7 +2,9 @@
 
 **Mini QOI (abbreviated mQOI) is a streaming [QOI](https://qoiformat.org/) decoder, designed for embedded systems with very little RAM.**
 
-<br><br>
+It sucessfully decoded all of the QOI test images posted on [the QOI website](https://qoiformat.org/qoi_test_images.zip), with no errors. As far as I know, that means it's compatible with the format!
+
+<br>
 
 ---
 
@@ -13,14 +15,14 @@
 + It only needs about 300 bytes of RAM while decoding an image!
 + It supports decoding an incoming QOI stream byte-by-byte!
 
-**If you're making an embedded app that makes use of the `.qoi` format and need a simple decoder, this is probably for you!**
+**If you're making an embedded app that makes use of the `.qoi` format and need a simple decoder, this is for you!**
 
 ## Why not choose mQOI?
 
 - It's probably slightly slower than the reference codec.
 - It doesn't support encoding (yet)
 
-**If you're making an application that needs the highest performance possible, this probably isn't for you.**
+**If you're making an application that needs the fastest decoder available, this likely isn't for you.**
 
 ## Performance testing
 
@@ -31,7 +33,7 @@ Here's some performance data from testing on the QOI logo, a 448x220 pixel image
 | Arduino UNO (ATMega328p) | 485764 | 4.93 |
 | Linux Desktop (i7-4790) | 1520 |  0.0154 |
 
-For simple images like the QOI logo, the compression ratio is about 1:20! Without compression, the logo would be 394 kB.
+For simple images like the QOI logo, the compression ratio is about 1:20! Without compression, the logo would be 394 kB, which wouldn't even fit in the flash memory of the UNO.
 
 ## Example build instructions
 
