@@ -11,7 +11,7 @@
 
 uint64_t micros(){
     struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+    clock_gettime(CLOCK_MONOTONIC, &ts);
     uint64_t us = (uint64_t)ts.tv_sec * 1000000ull + (uint64_t)ts.tv_nsec / 1000ull;
     return us;
 }
@@ -49,9 +49,6 @@ int main(int argc, const char * argv[]) {
         case MQOI_DESC_INVALID_MAGIC: printf("image had an invalid magic value!\n"); return -1;
         case MQOI_DESC_INVALID_CHANNELS: printf("image had an invalid channel number!\n"); return -1;
         case MQOI_DESC_INVALID_COLORSPACE: printf("image had an invalid colorspace!\n"); return -1;
-        case MQOI_DESC_INVALID_SIZE: 
-            printf("image of size %ux%u has more than 400 million pixels!\n", img_w, img_h); 
-            return -1;
         default: break;
     }
 
@@ -91,21 +88,20 @@ int main(int argc, const char * argv[]) {
         opt_size = img_w * img_h * sizeof(mqoi_rgba_t);
 
     char * img_data = malloc(img_size);
-    mqoi_rgba_t * opt_data = malloc(opt_size);
-
-    memcpy(&img_data[img_head], &img_desc.magic, MQOI_HEADER_SIZE);
-
-    img_head += MQOI_HEADER_SIZE;
-
     if (img_data == NULL) {
         printf("couldn't allocate input buffer!\n");
         return -1;
     }
 
+    mqoi_rgba_t * opt_data = malloc(opt_size);
     if (opt_data == NULL) {
         printf("couldn't allocate output buffer!\n");
         return -1;
     }
+
+    memcpy(&img_data[img_head], &img_desc.magic, MQOI_HEADER_SIZE);
+
+    img_head += MQOI_HEADER_SIZE;
 
     if (fread(&img_data[img_head], 1, img_size - img_head, img_f) < img_size - img_head) {
         printf("couldn't read all compressed image data!\n");
