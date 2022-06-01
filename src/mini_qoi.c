@@ -2,6 +2,15 @@
 
 #define MQOI_ISHOSTLE (*(uint8_t *)&(__mqoi_le) == 1)
 
+#ifdef _MSC_VER
+#include <stdlib.h>
+#define MQOI_BSWAP32 _byteswap_ulong
+#define MQOI_INLINE
+#else
+#define MQOI_BSWAP32 __builtin_bswap32
+#define MQOI_INLINE inline
+#endif
+
 static const uint16_t __mqoi_le = 1;
 
 // ==== utilities ====
@@ -11,7 +20,7 @@ Writes a big-endian unsigned 32-bit integer from n to dest.
 */
 void mqoi_u32_write(const uint32_t * n, uint8_t * dest) {
     if (MQOI_ISHOSTLE) {
-        *(uint32_t *)dest = __builtin_bswap32(*n); // swap bytes if little endian
+        *(uint32_t *)dest = MQOI_BSWAP32(*n); // swap bytes if little endian
     } else {
         *(uint32_t *)dest = *n;
     }
@@ -22,7 +31,7 @@ Reads a big-endian unsigned 32-bit integer from src into n.
 */
 void mqoi_u32_read(const uint8_t * src, uint32_t * n) {
     if (MQOI_ISHOSTLE) {
-        *n = __builtin_bswap32(*(uint32_t *)src); // swap bytes if little endian
+        *n = MQOI_BSWAP32(*(uint32_t *)src); // swap bytes if little endian
     } else {
         *n = *(uint32_t *)src;
     }
@@ -80,7 +89,7 @@ uint8_t mqoi_desc_verify(mqoi_desc_t * desc, uint32_t * w, uint32_t * h) {
 /*
 Returns true when the mQOI image descriptor object is completely populated.
 */
-inline bool mqoi_desc_done(const mqoi_desc_t * desc) {
+MQOI_INLINE bool mqoi_desc_done(const mqoi_desc_t * desc) {
     return desc->head >= sizeof(mqoi_desc_t) - 1;
 }
 
@@ -235,6 +244,6 @@ mqoi_rgba_t * mqoi_dec_pop(mqoi_dec_t * dec) {
 Returns true if the decoder has emitted all pixels necessary to complete the image being decoded.
 Note that this function will only work if n_pix was given during the initialization of the decoder.
 */
-inline bool mqoi_dec_done(const mqoi_dec_t * dec) {
+MQOI_INLINE bool mqoi_dec_done(const mqoi_dec_t * dec) {
     return dec->pix_left == 0;
 }
