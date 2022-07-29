@@ -1,7 +1,6 @@
 // This is the Arduino library version of mQOI
 
-#include "stdint.h"
-#include <stddef.h>
+#include <Arduino.h>
 
 namespace mQOI {
 
